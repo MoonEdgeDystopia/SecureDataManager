@@ -400,11 +400,11 @@
 				DEVELOPMENT_TEAM = 38X539SLX8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "SecureDataManager necesita acceso a la cámara para capturar fotos que serán cifradas y almacenadas de forma segura.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "SecureDataManager usa Face ID para proteger tu información personal de forma segura.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SecureDataManager necesita acceso a tus fotos para importarlas y cifrarlas localmente.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -435,11 +435,11 @@
 				DEVELOPMENT_TEAM = 38X539SLX8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "SecureDataManager necesita acceso a la cámara para capturar fotos que serán cifradas y almacenadas de forma segura.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "SecureDataManager usa Face ID para proteger tu información personal de forma segura.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "SecureDataManager necesita acceso a tus fotos para importarlas y cifrarlas localmente.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

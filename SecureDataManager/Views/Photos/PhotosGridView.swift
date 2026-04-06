@@ -115,8 +115,8 @@ struct PhotoGridContent: View {
     var body: some View {
         GeometryReader { geometry in
             let totalSpacing = spacing * CGFloat(columns - 1)
-            let availableWidth = geometry.size.width - totalSpacing
-            let cellSize = floor(availableWidth / CGFloat(columns))
+            let availableWidth = max(geometry.size.width - totalSpacing - (spacing * 2), 0)
+            let cellSize = max(floor(availableWidth / CGFloat(columns)), 0)
             
             let rows = stride(from: 0, to: photos.count, by: columns).map { startIndex in
                 Array(photos[startIndex..<min(startIndex + columns, photos.count)])
@@ -193,6 +193,8 @@ struct PhotoDetailView: View {
     
     @State private var showDeleteConfirmation: Bool = false
     @State private var showFullImage: Bool = false
+    @State private var showShareSheet: Bool = false
+    @State private var tempExportURL: URL?
     
     private var image: UIImage? {
         viewModel.decryptImage(for: photo)
@@ -268,16 +270,37 @@ struct PhotoDetailView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Botón eliminar
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Label("Eliminar Foto", systemImage: "trash")
+                    // Botones de acción
+                    VStack(spacing: 12) {
+                        // Compartir/Exportar
+                        Button(action: exportAndShare) {
+                            HStack {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Compartir / Exportar")
+                            }
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        
+                        // Eliminar
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("Eliminar Foto")
+                            }
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color.red.opacity(0.1))
+                            .foregroundStyle(.red)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -307,6 +330,43 @@ struct PhotoDetailView: View {
                     FullScreenImageView(image: image)
                 }
             }
+            .sheet(isPresented: $showShareSheet) {
+                if let url = tempExportURL {
+                    ShareSheet(items: [url])
+                }
+            }
+            .onDisappear {
+                // Limpiar archivo temporal
+                if let url = tempExportURL {
+                    try? FileManager.default.removeItem(at: url)
+                }
+            }
+        }
+    }
+    
+    private func exportAndShare() {
+        guard let image = image else {
+            print("No hay imagen para exportar")
+            return
+        }
+        
+        // Convertir UIImage a JPEG
+        guard let imageData = image.jpegData(compressionQuality: 0.95) else {
+            print("Error al convertir imagen")
+            return
+        }
+        
+        // Crear archivo temporal
+        let tempDir = FileManager.default.temporaryDirectory
+        let filename = "foto_\(Int(Date().timeIntervalSince1970)).jpg"
+        let tempURL = tempDir.appendingPathComponent(filename)
+        
+        do {
+            try imageData.write(to: tempURL)
+            tempExportURL = tempURL
+            showShareSheet = true
+        } catch {
+            print("Error al crear archivo temporal: \(error)")
         }
     }
     
