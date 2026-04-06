@@ -17,6 +17,7 @@ struct DocumentsListView: View {
     @State private var showDocumentPicker: Bool = false
     @State private var showAddText: Bool = false
     @State private var selectedDocument: EncryptedDocument?
+    @State private var showErrorAlert: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -38,7 +39,10 @@ struct DocumentsListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button(action: { showDocumentPicker = true }) {
+                        Button(action: { 
+                            print("Abriendo document picker...")
+                            showDocumentPicker = true 
+                        }) {
                             Label("Importar archivo", systemImage: "doc.badge.plus")
                         }
                         
@@ -57,6 +61,7 @@ struct DocumentsListView: View {
             }
             .sheet(isPresented: $showDocumentPicker) {
                 DocumentPicker { url in
+                    print("Archivo seleccionado: \(url.lastPathComponent)")
                     importDocument(from: url)
                 }
             }
@@ -66,8 +71,31 @@ struct DocumentsListView: View {
             .sheet(item: $selectedDocument) { document in
                 DocumentDetailView(viewModel: viewModel, document: document)
             }
+            .onChange(of: viewModel.errorMessage) { _, newValue in
+                showErrorAlert = newValue != nil
+            }
+            .alert("Error", isPresented: $showErrorAlert) {
+                Button("OK") {
+                    viewModel.errorMessage = nil
+                }
+            } message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                } else {
+                    Text("Ha ocurrido un error")
+                }
+            }
             .overlay {
-                if viewModel.documents.isEmpty {
+                if viewModel.isLoading {
+                    ProgressView("Importando...")
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                }
+            }
+            .overlay {
+                if viewModel.documents.isEmpty && !viewModel.isLoading {
                     ContentUnavailableView(
                         "No hay documentos",
                         systemImage: "doc.fill",
@@ -79,9 +107,13 @@ struct DocumentsListView: View {
     }
     
     private func importDocument(from url: URL) {
-        // Obtener nombre de archivo
-        let filename = url.deletingPathExtension().lastPathComponent
-        viewModel.importDocument(from: url, filename: filename)
+        // Obtener nombre de archivo completo con extensión
+        let filename = url.lastPathComponent
+        
+        // Pequeño delay para asegurar que el picker se cierre primero
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            viewModel.importDocument(from: url, filename: filename)
+        }
     }
     
     private func deleteDocuments(at offsets: IndexSet) {
@@ -259,19 +291,40 @@ struct PDFViewer: UIViewRepresentable {
     func updateUIView(_ uiView: PDFView, context: Context) {}
 }
 
-/// Selector de documentos
+/// Selector de documentos - Versión mejorada
 struct DocumentPicker: UIViewControllerRepresentable {
     let onSelect: (URL) -> Void
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [
-            .pdf,
-            .plainText,
-            .image,
-            .data
-        ])
+        // Tipos de archivos soportados
+        let contentTypes: [UTType] = [
+            .pdf,                    // Documentos PDF
+            .plainText,              // Archivos .txt
+            .utf8PlainText,          // Texto UTF-8
+            .rtf,                    // Rich Text Format
+            .image,                  // Imágenes (JPEG, PNG, etc.)
+            .jpeg,                   // JPEG específico
+            .png,                    // PNG específico
+            .data,                   // Datos genéricos (cualquier archivo)
+            UTType(filenameExtension: "md") ?? .plainText,  // Markdown
+            UTType(filenameExtension: "doc") ?? .data,      // Word antiguo
+            UTType(filenameExtension: "docx") ?? .data,     // Word moderno
+            UTType(filenameExtension: "xls") ?? .data,      // Excel antiguo
+            UTType(filenameExtension: "xlsx") ?? .data,     // Excel moderno
+            UTType(filenameExtension: "ppt") ?? .data,      // PowerPoint
+            UTType(filenameExtension: "pptx") ?? .data,     // PowerPoint moderno
+            UTType(filenameExtension: "pages") ?? .data,    // Pages
+            UTType(filenameExtension: "numbers") ?? .data,  // Numbers
+            UTType(filenameExtension: "keynote") ?? .data,  // Keynote
+            UTType(filenameExtension: "csv") ?? .plainText, // CSV
+            UTType(filenameExtension: "json") ?? .plainText, // JSON
+            UTType(filenameExtension: "xml") ?? .plainText,  // XML
+        ]
+        
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: contentTypes)
         picker.delegate = context.coordinator
-        picker.allowsMultipleSelection = false
+        picker.allowsMultipleSelection = true  // Permitir selección múltiple
+        picker.shouldShowFileExtensions = true // Mostrar extensiones de archivo
         return picker
     }
     
@@ -289,8 +342,22 @@ struct DocumentPicker: UIViewControllerRepresentable {
         }
         
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-            guard let url = urls.first else { return }
-            onSelect(url)
+            // Procesar todos los archivos seleccionados
+            for url in urls {
+                // Asegurar que el archivo sea accesible
+                guard url.startAccessingSecurityScopedResource() else {
+                    print("No se puede acceder al archivo: \(url.lastPathComponent)")
+                    continue
+                }
+                
+                defer { url.stopAccessingSecurityScopedResource() }
+                
+                onSelect(url)
+            }
+        }
+        
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            print("Selección de documento cancelada")
         }
     }
 }

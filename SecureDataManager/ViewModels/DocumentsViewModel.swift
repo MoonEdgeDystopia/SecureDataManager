@@ -52,8 +52,31 @@ class DocumentsViewModel: ObservableObject {
         
         isLoading = true
         
+        // Acceder al recurso de forma segura
+        guard url.startAccessingSecurityScopedResource() else {
+            errorMessage = "No se puede acceder al archivo. Verifica los permisos."
+            isLoading = false
+            return
+        }
+        
+        defer { url.stopAccessingSecurityScopedResource() }
+        
         do {
+            // Verificar que el archivo existe y tiene contenido
+            let fileManager = FileManager.default
+            guard fileManager.fileExists(atPath: url.path) else {
+                errorMessage = "El archivo no existe"
+                isLoading = false
+                return
+            }
+            
             let content = try Data(contentsOf: url)
+            
+            guard !content.isEmpty else {
+                errorMessage = "El archivo está vacío"
+                isLoading = false
+                return
+            }
             
             let documentType: DocumentType
             let fileExtension = url.pathExtension.lowercased()
