@@ -15,8 +15,7 @@ import SwiftUI
 enum SetupState {
     case passwordEntry
     case confirmPassword
-    case generatingShares
-    case showingShares
+    case securityQuestions
     case biometricSetup
     case completed
 }
@@ -30,8 +29,11 @@ class SetupViewModel: ObservableObject {
     @Published var passwordStrength: Double = 0
     @Published var passwordError: String?
     
-    @Published var shares: [SecretShare] = []
-    @Published var sharesGenerated: Bool = false
+    // Sistema de recuperación híbrido
+    @Published var recoveryCode: String = ""
+    @Published var recoveryData: RecoveryData?
+    @Published var recoveryQuestions: [String] = []
+    @Published var recoveryAnswers: [String] = []
     
     @Published var isBiometricEnabled: Bool = false
     @Published var isBiometricAvailable: Bool = false
@@ -39,8 +41,8 @@ class SetupViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     
-    private let shamir = ShamirSecretSharing()
     private let authViewModel = AuthViewModel()
+    private let recoveryManager = RecoveryManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -81,17 +83,16 @@ class SetupViewModel: ObservableObject {
         return true
     }
     
-    // MARK: - Navegación del Setup
+    // MARK: - Navegación
     
     func proceedToConfirmPassword() {
         guard validatePassword() else { return }
         setupState = .confirmPassword
     }
     
-    func proceedToShares() {
+    func proceedToSecurityQuestions() {
         guard validatePasswordConfirmation() else { return }
-        setupState = .generatingShares
-        generateShares()
+        setupState = .securityQuestions
     }
     
     func backToPasswordEntry() {
@@ -103,78 +104,67 @@ class SetupViewModel: ObservableObject {
         setupState = .confirmPassword
     }
     
-    // MARK: - Generación de Shares
-    
-    private func generateShares() {
-        isLoading = true
-        
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            
-            do {
-                // Crear datos del secreto (salt + indicador)
-                let cryptoService = CryptoService()
-                let salt = cryptoService.generateSalt()
-                
-                // El secreto es el salt que se necesita para derivar la clave
-                // junto con la contraseña que solo conoce el usuario
-                let secretData = salt
-                
-                // Generar 5 shares, necesarios 3 para reconstruir
-                let generatedShares = try self.shamir.split(
-                    secret: secretData,
-                    totalShares: 5,
-                    threshold: 3
-                )
-                
-                DispatchQueue.main.async {
-                    self.shares = generatedShares
-                    self.sharesGenerated = true
-                    self.setupState = .showingShares
-                    self.isLoading = false
-                }
-                
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Error al generar shares: \(error.localizedDescription)"
-                    self.isLoading = false
-                }
-            }
-        }
+    func backToSecurityQuestions() {
+        setupState = .securityQuestions
     }
     
-    func proceedToBiometric() {
+    func proceedToBiometricSetup() {
         setupState = .biometricSetup
     }
     
-    // MARK: - Biometría
+    // MARK: - Generación de Recuperación
     
-    private func checkBiometricAvailability() {
-        let context = LAContext()
-        var error: NSError?
-        isBiometricAvailable = context.canEvaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics,
-            error: &error
-        )
+    /// Guarda las preguntas y respuestas temporalmente
+    func setRecoveryQuestions(_ questions: [String], answers: [String]) {
+        self.recoveryQuestions = questions
+        self.recoveryAnswers = answers
     }
     
-    // MARK: - Completar Setup
+    // MARK: - Completar Setup con Recuperación
     
     func completeSetup() async -> Bool {
+        guard recoveryQuestions.count == 3 && recoveryAnswers.count == 3 else {
+            errorMessage = "No se han configurado las preguntas de seguridad"
+            return false
+        }
+        
+        guard !recoveryCode.isEmpty else {
+            errorMessage = "No se ha generado el código de recuperación"
+            return false
+        }
+        
         isLoading = true
         
         do {
-            // Configurar contraseña
+            // 1. Configurar contraseña (genera salt maestro)
             try authViewModel.setupPassword(password)
             
-            // Guardar masterKey en el singleton
-            if let key = authViewModel.masterKey {
-                await MainActor.run {
-                    AuthStateManager.shared.masterKey = key
-                }
+            guard let masterSalt = try KeychainManager.shared.getSalt() else {
+                throw NSError(domain: "Setup", code: -1, userInfo: [NSLocalizedDescriptionKey: "No se pudo obtener el salt maestro"])
             }
             
-            // Configurar biometría
+            print("Master salt obtenido: \(masterSalt.count) bytes")
+            
+            // 2. Generar RecoveryData con el salt maestro
+            let (recoveryData, _) = try recoveryManager.generateRecoveryData(
+                questions: recoveryQuestions,
+                answers: recoveryAnswers,
+                code: recoveryCode,
+                masterSalt: masterSalt
+            )
+            
+            print("RecoveryData generado exitosamente")
+            
+            // 3. Guardar datos de recuperación en Keychain
+            try KeychainManager.shared.saveRecoveryData(recoveryData)
+            print("RecoveryData guardado en Keychain")
+            
+            // 4. Guardar masterKey en el singleton
+            if let key = authViewModel.masterKey {
+                AuthStateManager.shared.masterKey = key
+            }
+            
+            // 5. Configurar biometría si está habilitada
             if isBiometricEnabled {
                 try authViewModel.enableBiometric()
             }
@@ -195,22 +185,52 @@ class SetupViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Recuperación
+    // MARK: - Biometría
     
-    /// Recupera el secreto desde shares
-    func recoverFromShares(_ shareCodes: [String]) throws -> Data {
-        guard shareCodes.count >= 3 else {
-            throw ShamirError.insufficientShares
-        }
+    private func checkBiometricAvailability() {
+        let context = LAContext()
+        var error: NSError?
+        isBiometricAvailable = context.canEvaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            error: &error
+        )
+    }
+    
+    func verifyBiometric() {
+        let context = LAContext()
+        let reason = "Verificando configuración de Face ID/Touch ID"
         
-        var shares: [SecretShare] = []
-        for code in shareCodes.prefix(3) {
-            guard let share = SecretShare(shareCode: code) else {
-                throw ShamirError.invalidShare
+        Task {
+            do {
+                let success = try await context.evaluatePolicy(
+                    .deviceOwnerAuthenticationWithBiometrics,
+                    localizedReason: reason
+                )
+                
+                if !success {
+                    await MainActor.run {
+                        isBiometricEnabled = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isBiometricEnabled = false
+                }
             }
-            shares.append(share)
+        }
+    }
+    
+    // MARK: - Recuperación (para uso posterior)
+    
+    func recoverFromQuestions(_ questions: [String], code: String) throws -> Data {
+        guard let recoveryData = self.recoveryData else {
+            throw RecoveryError.recoveryDataNotFound
         }
         
-        return try shamir.combine(shares: shares)
+        return try recoveryManager.recoverMasterSalt(
+            answers: questions,
+            code: code,
+            recoveryData: recoveryData
+        )
     }
 }

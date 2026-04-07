@@ -21,10 +21,8 @@ struct SetupPasswordView: View {
                     passwordEntryView
                 case .confirmPassword:
                     confirmPasswordView
-                case .generatingShares:
-                    generatingSharesView
-                case .showingShares:
-                    RecoverySetupView(viewModel: viewModel)
+                case .securityQuestions:
+                    SecurityQuestionsSetupView(viewModel: viewModel, isSetupComplete: $isSetupComplete)
                 case .biometricSetup:
                     BiometricSetupView(viewModel: viewModel, isSetupComplete: $isSetupComplete)
                 case .completed:
@@ -160,7 +158,7 @@ struct SetupPasswordView: View {
             Spacer()
             
             VStack(spacing: 12) {
-                Button(action: { viewModel.proceedToShares() }) {
+                Button(action: { viewModel.proceedToSecurityQuestions() }) {
                     if viewModel.isLoading {
                         ProgressView()
                             .frame(maxWidth: .infinity)

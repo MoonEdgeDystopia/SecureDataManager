@@ -59,16 +59,14 @@ struct RecoverySetupView: View {
                 
                 // Grid de shares
                 LazyVGrid(columns: [GridItem(.flexible())], spacing: 12) {
-                    ForEach(viewModel.shares) { share in
-                        ShareCardView(share: share)
-                            .onTapGesture {
-                                showShareDetail = share
-                            }
-                    }
+                    // Vista de recuperación legacy - usar SecurityQuestionsSetupView en su lugar
+                    Text("Esta vista ya no se usa. Usa SecurityQuestionsSetupView.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 
                 // Botón continuar
-                Button(action: { viewModel.proceedToBiometric() }) {
+                Button(action: { viewModel.proceedToBiometricSetup() }) {
                     Text("Continuar")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
@@ -354,11 +352,5 @@ struct BiometricSetupView: View {
 }
 
 #Preview {
-    let vm = SetupViewModel()
-    vm.shares = [
-        SecretShare(index: 1, value: Data([0x01, 0x02, 0x03]), threshold: 3, totalShares: 5),
-        SecretShare(index: 2, value: Data([0x04, 0x05, 0x06]), threshold: 3, totalShares: 5),
-        SecretShare(index: 3, value: Data([0x07, 0x08, 0x09]), threshold: 3, totalShares: 5),
-    ]
-    return RecoverySetupView(viewModel: vm)
+    RecoverySetupView(viewModel: SetupViewModel())
 }

@@ -299,13 +299,76 @@ class KeychainManager {
         return value == "1"
     }
     
+    // MARK: - Datos de Recuperación
+    
+    /// Guarda los datos de recuperación
+    func saveRecoveryData(_ data: RecoveryData) throws {
+        let encoder = JSONEncoder()
+        let encodedData = try encoder.encode(data)
+        
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: "recoveryData",
+            kSecValueData as String: encodedData,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+        
+        let status = SecItemAdd(query as CFDictionary, nil)
+        
+        if status == errSecDuplicateItem {
+            let updateQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: "recoveryData"
+            ]
+            let attributesToUpdate: [String: Any] = [
+                kSecValueData as String: encodedData
+            ]
+            let updateStatus = SecItemUpdate(updateQuery as CFDictionary, attributesToUpdate as CFDictionary)
+            guard updateStatus == errSecSuccess else {
+                throw KeychainError.invalidStatus(updateStatus)
+            }
+        } else if status != errSecSuccess {
+            throw KeychainError.invalidStatus(status)
+        }
+    }
+    
+    /// Recupera los datos de recuperación
+    func getRecoveryData() throws -> RecoveryData? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: "recoveryData",
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status == errSecSuccess else {
+            if status == errSecItemNotFound {
+                return nil
+            }
+            throw KeychainError.invalidStatus(status)
+        }
+        
+        guard let data = result as? Data else {
+            throw KeychainError.conversionFailed
+        }
+        
+        let decoder = JSONDecoder()
+        return try decoder.decode(RecoveryData.self, from: data)
+    }
+    
     // MARK: - Limpieza
     
     /// Elimina todos los datos de autenticación
     func clearAllAuthData() throws {
         try deleteMasterKey()
         
-        let accounts = ["passwordSalt", "passwordHash", "biometricEnabled"]
+        let accounts = ["passwordSalt", "passwordHash", "biometricEnabled", "recoveryData"]
         for account in accounts {
             let query: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
