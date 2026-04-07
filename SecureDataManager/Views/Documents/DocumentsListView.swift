@@ -22,7 +22,7 @@ struct DocumentsListView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(viewModel.documents) { document in
+                ForEach(viewModel.searchText.isEmpty ? viewModel.documents : viewModel.searchDocuments(query: viewModel.searchText)) { document in
                     DocumentRowView(
                         document: document,
                         filename: viewModel.decryptFilename(for: document)
@@ -36,6 +36,7 @@ struct DocumentsListView: View {
             }
             .listStyle(.plain)
             .navigationTitle("Documentos")
+            .searchable(text: $viewModel.searchText, prompt: "Buscar documentos")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {

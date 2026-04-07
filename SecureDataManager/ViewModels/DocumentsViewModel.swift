@@ -23,6 +23,15 @@ class DocumentsViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var masterKey: SymmetricKey?
     
+    var filteredDocuments: [EncryptedDocument] {
+        if searchText.isEmpty {
+            return documents
+        }
+        // Nota: Para búsqueda real necesitaríamos descifrar los nombres
+        // Por ahora retornamos todos y la búsqueda se hace en la UI descifrando
+        return documents
+    }
+    
     init() {
         setupBindings()
         loadDocuments()
@@ -167,7 +176,9 @@ class DocumentsViewModel: ObservableObject {
         do {
             return try document.decryptContent(key: masterKey)
         } catch {
-            errorMessage = "Error al descifrar: \(error.localizedDescription)"
+            // No podemos actualizar errorMessage aquí porque esta función
+            // se llama desde la UI durante actualizaciones de vista
+            print("Error al descifrar: \(error.localizedDescription)")
             return nil
         }
     }
@@ -192,6 +203,24 @@ class DocumentsViewModel: ObservableObject {
         } catch {}
         
         return "No hay vista previa disponible"
+    }
+    
+    // MARK: - Búsqueda
+    
+    func searchDocuments(query: String) -> [EncryptedDocument] {
+        guard !query.isEmpty else { return documents }
+        guard let masterKey = masterKey else { return documents }
+        
+        let lowerQuery = query.lowercased()
+        
+        return documents.filter { document in
+            do {
+                let filename = try document.decryptFilename(key: masterKey).lowercased()
+                return filename.contains(lowerQuery)
+            } catch {
+                return false
+            }
+        }
     }
     
     // MARK: - Exportación

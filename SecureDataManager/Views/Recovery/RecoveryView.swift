@@ -22,95 +22,95 @@ struct RecoveryView: View {
     private let shamir = ShamirSecretSharing()
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 12) {
-                    Image(systemName: "key.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.orange)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 12) {
+                        Image(systemName: "key.fill")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.orange)
+                        
+                        Text("Recuperación de Contraseña")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        Text("Ingresa los 3 códigos de recuperación (1, 2, 3) para restaurar el acceso.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 20)
                     
-                    Text("Recuperación de Contraseña")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("Ingresa 3 de tus 5 códigos de recuperación para restaurar el acceso.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 20)
-                
-                // Campos de shares
-                VStack(spacing: 16) {
-                    ForEach(0..<3) { index in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Código de recuperación \(index + 1)")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                            
-                            TextField("Pega el código aquí", text: $shareCodes[index])
-                                .textContentType(.none)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .font(.system(.body, design: .monospaced))
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                    // Campos de shares
+                    VStack(spacing: 16) {
+                        ForEach(0..<3) { index in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Código de recuperación \(index + 1)")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.secondary)
+                                
+                                TextField("Pega el código aquí", text: $shareCodes[index])
+                                    .textContentType(.none)
+                                    .autocorrectionDisabled()
+                                    .textInputAutocapitalization(.never)
+                                    .font(.system(.body, design: .monospaced))
+                                    .padding()
+                                    .background(Color(.systemGray6))
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
                         }
                     }
-                }
-                
-                if let errorMessage = errorMessage {
-                    Label(errorMessage, systemImage: "exclamationmark.circle")
-                        .font(.subheadline)
-                        .foregroundStyle(.red)
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                
-                // Botón de recuperación
-                Button(action: attemptRecovery) {
-                    if isRecovering {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    } else {
-                        Text("Recuperar Acceso")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    }
-                }
-                .background(allFieldsFilled ? Color.orange : Color.gray)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .disabled(!allFieldsFilled || isRecovering)
-                
-                // Información adicional
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Los códigos de recuperación se mostraron al configurar la aplicación.", systemImage: "info.circle")
                     
-                    Label("Guarda tus códigos en un lugar seguro fuera de este dispositivo.", systemImage: "exclamationmark.shield")
+                    if let errorMessage = errorMessage {
+                        Label(errorMessage, systemImage: "exclamationmark.circle")
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                            .padding()
+                            .background(Color.red.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    
+                    // Botón de recuperación
+                    Button(action: attemptRecovery) {
+                        if isRecovering {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        } else {
+                            Text("Recuperar Acceso")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
+                    }
+                    .background(allFieldsFilled ? Color.orange : Color.gray)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .disabled(!allFieldsFilled || isRecovering)
+                    
+                    // Información adicional
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Los códigos de recuperación se mostraron al configurar la aplicación.", systemImage: "info.circle")
+                        
+                        Label("Guarda tus códigos en un lugar seguro fuera de este dispositivo.", systemImage: "exclamationmark.shield")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    Spacer()
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
                 .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                Spacer()
             }
-            .padding()
-        }
-        .navigationTitle("Recuperación")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showNewPasswordSetup) {
-            if let salt = recoveredSalt {
+            .navigationTitle("Recuperación")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showNewPasswordSetup) {
                 NewPasswordAfterRecoveryView(
-                    recoveredSalt: salt,
+                    recoveredSalt: recoveredSalt ?? Data(),
                     isAuthenticated: $isAuthenticated,
                     onComplete: { dismiss() }
                 )
@@ -126,20 +126,78 @@ struct RecoveryView: View {
         isRecovering = true
         errorMessage = nil
         
+        print("=== INICIANDO RECUPERACIÓN ===")
+        print("Códigos ingresados: \(shareCodes)")
+        
         Task {
             do {
-                // Intentar reconstruir el secreto
-                let secretData = try shamir.combine(shares: shareCodes.compactMap { SecretShare(shareCode: $0) })
+                // Limpiar códigos
+                let cleanedCodes = shareCodes.map { 
+                    $0.trimmingCharacters(in: .whitespacesAndNewlines) 
+                }
+                
+                print("Códigos limpios: \(cleanedCodes)")
+                
+                // Crear shares
+                var validShares: [SecretShare] = []
+                for (i, code) in cleanedCodes.enumerated() {
+                    if let share = SecretShare(shareCode: code) {
+                        validShares.append(share)
+                        print("Share \(i+1) válido: index=\(share.index), valueSize=\(share.value.count)")
+                    } else {
+                        print("Share \(i+1) inválido")
+                    }
+                }
+                
+                guard validShares.count >= 3 else {
+                    print("Error: Solo \(validShares.count) shares válidos, se necesitan 3")
+                    throw ShamirError.insufficientShares
+                }
+                
+                // IMPORTANTE: Usar los shares con índices 1, 2, 3 (los originales)
+                // Ordenar por índice y tomar los primeros 3
+                let sortedShares = validShares.sorted { $0.index < $1.index }
+                let sharesToUse = Array(sortedShares.prefix(3))
+                
+                print("Usando shares con índices: \(sharesToUse.map { $0.index })")
+                
+                // Verificar que tenemos los índices correctos (1, 2, 3)
+                let expectedIndices: [UInt8] = [1, 2, 3]
+                let actualIndices = sharesToUse.map { $0.index }
+                
+                if actualIndices != expectedIndices {
+                    print("Advertencia: Los índices no son 1,2,3. Son: \(actualIndices)")
+                }
+                
+                // Reconstruir
+                print("Reconstruyendo secreto con \(sharesToUse.count) shares...")
+                let secretData = try shamir.combine(shares: sharesToUse)
+                print("Secreto reconstruido: \(secretData.count) bytes")
+                print("Bytes (hex): \(secretData.map { String(format: "%02x", $0) }.joined())")
+                
+                // Verificar que el salt tiene el tamaño correcto (32 bytes)
+                guard secretData.count == 32 else {
+                    print("Error: Salt reconstruido tiene \(secretData.count) bytes, se esperaban 32")
+                    throw ShamirError.reconstructionFailed
+                }
                 
                 await MainActor.run {
                     self.recoveredSalt = secretData
                     self.isRecovering = false
                     self.showNewPasswordSetup = true
+                    print("Recuperación exitosa!")
                 }
                 
-            } catch {
+            } catch let error as ShamirError {
+                print("Error de Shamir: \(error)")
                 await MainActor.run {
-                    self.errorMessage = "Códigos inválidos. Verifica que sean correctos."
+                    self.errorMessage = error.localizedDescription
+                    self.isRecovering = false
+                }
+            } catch {
+                print("Error inesperado: \(error)")
+                await MainActor.run {
+                    self.errorMessage = "Error al recuperar: \(error.localizedDescription)"
                     self.isRecovering = false
                 }
             }
@@ -201,7 +259,6 @@ struct NewPasswordAfterRecoveryView: View {
                         .background(Color(.systemGray6))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         
-                        // Indicador de fortaleza
                         PasswordStrengthBar(password: newPassword)
                     }
                     
@@ -264,67 +321,42 @@ struct NewPasswordAfterRecoveryView: View {
         }
         
         isSettingUp = true
+        print("=== CONFIGURANDO NUEVA CONTRASEÑA ===")
+        print("Salt recuperado: \(recoveredSalt.count) bytes")
         
         Task {
             do {
-                // Usar el salt recuperado para derivar la clave
                 let cryptoService = CryptoService()
                 let passwordHash = try cryptoService.hashPassword(newPassword, salt: recoveredSalt)
                 let masterKey = try cryptoService.deriveKey(from: newPassword, salt: recoveredSalt)
                 
+                print("Hash y clave derivados exitosamente")
+                
                 // Guardar en Keychain
                 try KeychainManager.shared.saveSalt(recoveredSalt)
                 try KeychainManager.shared.savePasswordHash(passwordHash)
-                try KeychainManager.shared.saveMasterKey(masterKey)
+                
+                // Guardar masterKey
+                AuthStateManager.shared.masterKey = masterKey
+                print("Datos guardados en Keychain")
                 
                 await MainActor.run {
                     isAuthenticated = true
+                    print("Navegando a pantalla principal...")
                     dismiss()
-                    onComplete()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        onComplete()
+                    }
                 }
                 
             } catch {
+                print("Error: \(error)")
                 await MainActor.run {
                     errorMessage = "Error al configurar: \(error.localizedDescription)"
                     isSettingUp = false
                 }
             }
         }
-    }
-}
-
-/// Barra de fortaleza de contraseña
-struct PasswordStrengthBar: View {
-    let password: String
-    
-    var strength: Double {
-        password.passwordStrength
-    }
-    
-    var color: Color {
-        switch strength {
-        case 0..<0.3: return .red
-        case 0.3..<0.5: return .orange
-        case 0.5..<0.7: return .yellow
-        case 0.7..<0.9: return .green
-        default: return .blue
-        }
-    }
-    
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 4)
-                
-                Rectangle()
-                    .fill(color)
-                    .frame(width: geometry.size.width * strength, height: 4)
-                    .animation(.easeInOut, value: strength)
-            }
-        }
-        .frame(height: 4)
     }
 }
 

@@ -24,18 +24,15 @@ struct PhotosGridView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                PhotoGridContent(
-                    photos: viewModel.photos.sorted(by: { $0.createdAt > $1.createdAt }),
-                    spacing: spacing,
-                    columns: columns,
-                    decryptThumbnail: viewModel.decryptThumbnail,
-                    onSelect: { photo in
-                        selectedPhoto = photo
-                    }
-                )
-                .padding(spacing)
-            }
+            PhotoGridContent(
+                photos: viewModel.photos.sorted(by: { $0.createdAt > $1.createdAt }),
+                spacing: spacing,
+                columns: columns,
+                decryptThumbnail: viewModel.decryptThumbnail,
+                onSelect: { photo in
+                    selectedPhoto = photo
+                }
+            )
             .navigationTitle(viewModel.photos.isEmpty ? "Fotos" : "\(viewModel.photos.count) fotos")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -113,38 +110,44 @@ struct PhotoGridContent: View {
     let onSelect: (EncryptedPhoto) -> Void
     
     var body: some View {
+        // Usar GeometryReader a nivel superior para calcular el ancho
         GeometryReader { geometry in
             let totalSpacing = spacing * CGFloat(columns - 1)
-            let availableWidth = max(geometry.size.width - totalSpacing - (spacing * 2), 0)
+            let availableWidth = max(geometry.size.width - totalSpacing, 0)
             let cellSize = max(floor(availableWidth / CGFloat(columns)), 0)
             
             let rows = stride(from: 0, to: photos.count, by: columns).map { startIndex in
                 Array(photos[startIndex..<min(startIndex + columns, photos.count)])
             }
             
-            VStack(alignment: .leading, spacing: spacing) {
-                ForEach(Array(rows.enumerated()), id: \.offset) { _, rowPhotos in
-                    HStack(spacing: spacing) {
-                        ForEach(rowPhotos) { photo in
-                            PhotoThumbnailCell(
-                                photo: photo,
-                                image: decryptThumbnail(photo),
-                                size: cellSize
-                            )
-                            .onTapGesture {
-                                onSelect(photo)
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: spacing) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, rowPhotos in
+                        HStack(spacing: spacing) {
+                            ForEach(rowPhotos) { photo in
+                                PhotoThumbnailCell(
+                                    photo: photo,
+                                    image: decryptThumbnail(photo),
+                                    size: cellSize
+                                )
+                                .onTapGesture {
+                                    onSelect(photo)
+                                }
                             }
-                        }
-                        
-                        // Espacios vacíos para completar la fila
-                        let emptyCount = columns - rowPhotos.count
-                        ForEach(0..<emptyCount, id: \.self) { _ in
-                            Color.clear
-                                .frame(width: cellSize, height: cellSize)
+                            
+                            // Espacios vacíos para completar la fila
+                            let emptyCount = columns - rowPhotos.count
+                            ForEach(0..<emptyCount, id: \.self) { _ in
+                                Color.clear
+                                    .frame(width: cellSize, height: cellSize)
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, spacing)
+                .padding(.vertical, spacing)
             }
+            .scrollIndicators(.visible)
         }
     }
 }

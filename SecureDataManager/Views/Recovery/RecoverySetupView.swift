@@ -27,7 +27,7 @@ struct RecoverySetupView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                     
-                    Text("Guarda estos 5 códigos en un lugar seguro. Necesitarás 3 de ellos para recuperar tu acceso si olvidas tu contraseña.")
+                    Text("Guarda estos códigos en un lugar seguro. Necesitarás los 3 códigos principales (1, 2, 3) para recuperar tu acceso si olvidas tu contraseña.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
