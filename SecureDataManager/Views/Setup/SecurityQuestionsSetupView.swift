@@ -2,7 +2,7 @@
 //  SecurityQuestionsSetupView.swift
 //  SecureDataManager
 //
-//  Vista para configurar preguntas de seguridad durante setup
+//  Vista para configurar preguntas de seguridad durante setup - Estilo Metálico
 //
 
 import SwiftUI
@@ -12,6 +12,7 @@ struct SecurityQuestionsSetupView: View {
     @ObservedObject var viewModel: SetupViewModel
     @Binding var isSetupComplete: Bool
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     
     @State private var questions: [String] = ["", "", ""]
     @State private var answers: [String] = ["", "", ""]
@@ -41,33 +42,46 @@ struct SecurityQuestionsSetupView: View {
         ScrollView {
             VStack(spacing: 24) {
                 // Header
-                VStack(spacing: 12) {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.orange)
-                    
-                    Text("Configura tu Recuperación")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("Configura 3 preguntas de seguridad y guarda tu código de recuperación. Estos son necesarios para recuperar tu cuenta si olvidas tu contraseña.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 20)
+                MetallicHeader(
+                    title: "Recuperación",
+                    icon: "shield.lefthalf.filled",
+                    iconSize: 70
+                )
+                
+                Text("Configura 3 preguntas de seguridad y guarda tu código de recuperación. Estos son necesarios para recuperar tu cuenta si olvidas tu contraseña.")
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: colorScheme == .dark
+                                ? [Color(red: 0.60, green: 0.65, blue: 0.75), Color(red: 0.45, green: 0.50, blue: 0.60)]
+                                : [Color(red: 0.35, green: 0.40, blue: 0.50), Color(red: 0.50, green: 0.55, blue: 0.65)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .padding(.horizontal)
                 
                 // Preguntas y respuestas
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Preguntas de Seguridad")
                         .font(.headline)
-                        .padding(.horizontal)
+                        .foregroundStyle(
+                            colorScheme == .dark
+                                ? Color(red: 0.80, green: 0.85, blue: 0.95)
+                                : Color(red: 0.25, green: 0.30, blue: 0.45)
+                        )
                     
                     ForEach(0..<3, id: \.self) { index in
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Text("Pregunta \(index + 1)")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
+                                .foregroundStyle(
+                                    colorScheme == .dark
+                                        ? Color(red: 0.65, green: 0.70, blue: 0.80)
+                                        : Color(red: 0.35, green: 0.40, blue: 0.50)
+                                )
                             
                             // Selector de preguntas sugeridas
                             Menu {
@@ -80,33 +94,49 @@ struct SecurityQuestionsSetupView: View {
                                 HStack {
                                     TextField("Escribe o selecciona una pregunta", text: $questions[index])
                                         .lineLimit(2)
+                                        .foregroundStyle(colorScheme == .dark ? .white : .primary)
                                     Image(systemName: "chevron.down")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: colorScheme == .dark
+                                                    ? [Color(red: 0.70, green: 0.75, blue: 0.85), Color(red: 0.50, green: 0.55, blue: 0.65)]
+                                                    : [Color(red: 0.40, green: 0.45, blue: 0.55), Color(red: 0.60, green: 0.65, blue: 0.75)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
                                 }
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .metallicTextField()
                             }
                             
                             HStack {
                                 if showAnswers[index] {
                                     TextField("Tu respuesta", text: $answers[index])
+                                        .foregroundStyle(colorScheme == .dark ? .white : .primary)
                                 } else {
                                     SecureField("Tu respuesta", text: $answers[index])
+                                        .foregroundStyle(colorScheme == .dark ? .white : .primary)
                                 }
                                 
                                 Button(action: { showAnswers[index].toggle() }) {
                                     Image(systemName: showAnswers[index] ? "eye.slash" : "eye")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: colorScheme == .dark
+                                                    ? [Color(red: 0.70, green: 0.75, blue: 0.85), Color(red: 0.50, green: 0.55, blue: 0.65)]
+                                                    : [Color(red: 0.40, green: 0.45, blue: 0.55), Color(red: 0.60, green: 0.65, blue: 0.75)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
                                 }
                             }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .metallicTextField()
                         }
-                        .padding(.horizontal)
                     }
                 }
+                .padding(24)
+                .metallicCard()
                 
                 // Botón generar código
                 if recoveryCode.isEmpty {
@@ -118,13 +148,14 @@ struct SecurityQuestionsSetupView: View {
                         } else {
                             Text("Generar Código de Recuperación")
                                 .font(.headline)
+                                .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                                 .padding()
                         }
                     }
-                    .background(allFieldsValid ? Color.orange : Color.gray)
                     .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: 54)
+                    .metallicButton(isEnabled: allFieldsValid && !isGenerating)
                     .disabled(!allFieldsValid || isGenerating)
                     .padding(.horizontal)
                 } else {
@@ -132,65 +163,125 @@ struct SecurityQuestionsSetupView: View {
                     VStack(spacing: 16) {
                         Text("Tu Código de Recuperación")
                             .font(.headline)
-                            .padding(.horizontal)
+                            .foregroundStyle(
+                                colorScheme == .dark
+                                    ? Color(red: 0.80, green: 0.85, blue: 0.95)
+                                    : Color(red: 0.25, green: 0.30, blue: 0.45)
+                            )
                         
                         VStack(spacing: 12) {
                             Text(recoveryCode)
                                 .font(.system(.body, design: .monospaced))
                                 .multilineTextAlignment(.center)
                                 .padding()
-                                .background(Color.orange.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: colorScheme == .dark
+                                                    ? [Color(red: 0.25, green: 0.30, blue: 0.40).opacity(0.5), Color(red: 0.20, green: 0.25, blue: 0.35).opacity(0.3)]
+                                                    : [Color(red: 0.90, green: 0.93, blue: 0.98), Color(red: 0.85, green: 0.88, blue: 0.93)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(MetallicColors.metallicBorder(isDark: colorScheme == .dark), lineWidth: 1.5)
+                                        )
+                                )
                             
-                            HStack(spacing: 16) {
+                            HStack(spacing: 20) {
                                 Button(action: copyRecoveryCode) {
                                     Label("Copiar", systemImage: "doc.on.doc")
                                 }
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: colorScheme == .dark
+                                            ? [Color(red: 0.65, green: 0.75, blue: 0.95), Color(red: 0.55, green: 0.65, blue: 0.85)]
+                                            : [Color(red: 0.30, green: 0.40, blue: 0.70), Color(red: 0.40, green: 0.50, blue: 0.80)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                                 
                                 Button(action: shareRecoveryCode) {
                                     Label("Compartir", systemImage: "square.and.arrow.up")
                                 }
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: colorScheme == .dark
+                                            ? [Color(red: 0.65, green: 0.75, blue: 0.95), Color(red: 0.55, green: 0.65, blue: 0.85)]
+                                            : [Color(red: 0.30, green: 0.40, blue: 0.70), Color(red: 0.40, green: 0.50, blue: 0.80)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                             }
-                            .font(.subheadline)
                         }
-                        .padding(.horizontal)
                         
                         // Checkbox de confirmación
                         Toggle(isOn: $hasAcknowledged) {
                             Text("He guardado mi código de recuperación en un lugar seguro y he memorizado mis respuestas.")
                                 .font(.subheadline)
+                                .foregroundStyle(
+                                    colorScheme == .dark
+                                        ? Color(red: 0.70, green: 0.75, blue: 0.85)
+                                        : Color(red: 0.35, green: 0.40, blue: 0.50)
+                                )
                         }
-                        .padding(.horizontal)
+                        .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.40, green: 0.50, blue: 0.70)))
                         
                         // Botón continuar
                         Button(action: proceedToBiometricSetup) {
                             Text("Continuar")
                                 .font(.headline)
+                                .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                                 .padding()
                         }
-                        .background(hasAcknowledged ? Color.green : Color.gray)
                         .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(height: 54)
+                        .metallicButton(isEnabled: hasAcknowledged)
                         .disabled(!hasAcknowledged)
-                        .padding(.horizontal)
                     }
+                    .padding(24)
+                    .metallicCard()
                 }
                 
                 if let errorMessage = errorMessage {
                     Label(errorMessage, systemImage: "exclamationmark.circle")
                         .font(.subheadline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.red.opacity(0.9), Color.red.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .padding()
-                        .background(Color.red.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.red.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                )
+                        )
                         .padding(.horizontal)
                 }
                 
-                Spacer()
+                Spacer(minLength: 30)
             }
             .padding()
         }
+        .background(MetallicBackground().ignoresSafeArea())
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(
                 items: ["Mi código de recuperación para SecureDataManager:\n\n\(recoveryCode)\n\nGuárdalo en un lugar seguro."]

@@ -2,7 +2,7 @@
 //  RecoveryView.swift
 //  SecureDataManager
 //
-//  Vista para recuperación de contraseña con preguntas + código
+//  Vista para recuperación de contraseña con preguntas + código - Estilo Metálico
 //
 
 import SwiftUI
@@ -12,6 +12,7 @@ struct RecoveryView: View {
     
     @Binding var isAuthenticated: Bool
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     
     @State private var answers: [String] = ["", "", ""]
     @State private var recoveryCode: String = ""
@@ -25,139 +26,182 @@ struct RecoveryView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 12) {
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.orange)
-                        
-                        Text("Recuperación de Cuenta")
-                            .font(.title2)
-                            .fontWeight(.bold)
+            ZStack {
+                MetallicBackground()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header
+                        MetallicHeader(
+                            title: "Recuperación",
+                            icon: "key.fill",
+                            iconSize: 70
+                        )
                         
                         Text("Responde tus preguntas de seguridad e ingresa tu código de recuperación.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, 20)
-                    
-                    if let data = recoveryData {
-                        // Preguntas de seguridad
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Preguntas de Seguridad")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            // Pregunta 1
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(data.question1)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                
-                                SecureField("Tu respuesta", text: $answers[0])
-                                    .textContentType(.none)
-                                    .autocorrectionDisabled()
-                                    .padding()
-                                    .background(Color(.systemGray6))
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: colorScheme == .dark
+                                        ? [Color(red: 0.60, green: 0.65, blue: 0.75), Color(red: 0.45, green: 0.50, blue: 0.60)]
+                                        : [Color(red: 0.35, green: 0.40, blue: 0.50), Color(red: 0.50, green: 0.55, blue: 0.65)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .padding(.horizontal)
-                            
-                            // Pregunta 2
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(data.question2)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                
-                                SecureField("Tu respuesta", text: $answers[1])
-                                    .textContentType(.none)
-                                    .autocorrectionDisabled()
-                                    .padding()
-                                    .background(Color(.systemGray6))
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                            .padding(.horizontal)
-                            
-                            // Pregunta 3
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(data.question3)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                
-                                SecureField("Tu respuesta", text: $answers[2])
-                                    .textContentType(.none)
-                                    .autocorrectionDisabled()
-                                    .padding()
-                                    .background(Color(.systemGray6))
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                            .padding(.horizontal)
-                        }
                         
-                        // Código de recuperación
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Código de Recuperación")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .padding(.horizontal)
-                            
-                            TextField("Pega tu código aquí", text: $recoveryCode)
-                                .textContentType(.none)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .font(.system(.body, design: .monospaced))
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .padding(.horizontal)
-                        }
-                        
-                        if let errorMessage = errorMessage {
-                            Label(errorMessage, systemImage: "exclamationmark.circle")
-                                .font(.subheadline)
-                                .foregroundStyle(.red)
-                                .padding()
-                                .background(Color.red.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .padding(.horizontal)
-                        }
-                        
-                        // Botón de recuperación
-                        Button(action: attemptRecovery) {
-                            if isVerifying {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                            } else {
-                                Text("Recuperar Cuenta")
+                        if let data = recoveryData {
+                            // Preguntas de seguridad
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Preguntas de Seguridad")
                                     .font(.headline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
+                                    .foregroundStyle(
+                                        colorScheme == .dark
+                                            ? Color(red: 0.80, green: 0.85, blue: 0.95)
+                                            : Color(red: 0.25, green: 0.30, blue: 0.45)
+                                    )
+                                
+                                // Pregunta 1
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(data.question1)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(
+                                            colorScheme == .dark
+                                                ? Color(red: 0.65, green: 0.70, blue: 0.80)
+                                                : Color(red: 0.35, green: 0.40, blue: 0.50)
+                                        )
+                                    
+                                    SecureField("Tu respuesta", text: $answers[0])
+                                        .textContentType(.none)
+                                        .autocorrectionDisabled()
+                                        .metallicTextField()
+                                }
+                                
+                                // Pregunta 2
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(data.question2)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(
+                                            colorScheme == .dark
+                                                ? Color(red: 0.65, green: 0.70, blue: 0.80)
+                                                : Color(red: 0.35, green: 0.40, blue: 0.50)
+                                        )
+                                    
+                                    SecureField("Tu respuesta", text: $answers[1])
+                                        .textContentType(.none)
+                                        .autocorrectionDisabled()
+                                        .metallicTextField()
+                                }
+                                
+                                // Pregunta 3
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(data.question3)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(
+                                            colorScheme == .dark
+                                                ? Color(red: 0.65, green: 0.70, blue: 0.80)
+                                                : Color(red: 0.35, green: 0.40, blue: 0.50)
+                                        )
+                                    
+                                    SecureField("Tu respuesta", text: $answers[2])
+                                        .textContentType(.none)
+                                        .autocorrectionDisabled()
+                                        .metallicTextField()
+                                }
                             }
+                            .padding(24)
+                            .metallicCard()
+                            
+                            // Código de recuperación
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Código de Recuperación")
+                                    .font(.headline)
+                                    .foregroundStyle(
+                                        colorScheme == .dark
+                                            ? Color(red: 0.80, green: 0.85, blue: 0.95)
+                                            : Color(red: 0.25, green: 0.30, blue: 0.45)
+                                    )
+                                
+                                TextField("Pega tu código aquí", text: $recoveryCode)
+                                    .textContentType(.none)
+                                    .autocorrectionDisabled()
+                                    .textInputAutocapitalization(.never)
+                                    .font(.system(.body, design: .monospaced))
+                                    .metallicTextField()
+                            }
+                            .padding(24)
+                            .metallicCard()
+                            
+                            if let errorMessage = errorMessage {
+                                Label(errorMessage, systemImage: "exclamationmark.circle")
+                                    .font(.subheadline)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [Color.red.opacity(0.9), Color.red.opacity(0.7)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.red.opacity(0.1))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                                            )
+                                    )
+                            }
+                            
+                            // Botón de recuperación
+                            Button(action: attemptRecovery) {
+                                if isVerifying {
+                                    ProgressView()
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                } else {
+                                    Text("Recuperar Cuenta")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                }
+                            }
+                            .foregroundStyle(.white)
+                            .frame(height: 54)
+                            .metallicButton(isEnabled: allFieldsFilled && !isVerifying)
+                            .disabled(!allFieldsFilled || isVerifying)
+                        } else {
+                            // Cargando datos de recuperación
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                    .tint(colorScheme == .dark ? Color(red: 0.70, green: 0.75, blue: 0.85) : Color(red: 0.40, green: 0.45, blue: 0.55))
+                                Text("Cargando datos de recuperación...")
+                                    .font(.subheadline)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: colorScheme == .dark
+                                                ? [Color(red: 0.60, green: 0.65, blue: 0.75), Color(red: 0.45, green: 0.50, blue: 0.60)]
+                                                : [Color(red: 0.35, green: 0.40, blue: 0.50), Color(red: 0.50, green: 0.55, blue: 0.65)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                            }
+                            .padding(.top, 60)
                         }
-                        .background(allFieldsFilled ? Color.orange : Color.gray)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .disabled(!allFieldsFilled || isVerifying)
-                        .padding(.horizontal)
-                    } else {
-                        // Cargando datos de recuperación
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                            Text("Cargando datos de recuperación...")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.top, 40)
+                        
+                        Spacer(minLength: 30)
                     }
-                    
-                    Spacer()
+                    .padding()
                 }
-                .padding()
             }
             .navigationTitle("Recuperación")
             .navigationBarTitleDisplayMode(.inline)
@@ -199,7 +243,6 @@ struct RecoveryView: View {
         errorMessage = nil
         
         print("=== INICIANDO RECUPERACIÓN ===")
-        print("Respuestas proporcionadas")
         
         Task {
             do {
@@ -279,6 +322,7 @@ struct NewPasswordAfterRecoveryView: View {
     @Binding var isAuthenticated: Bool
     let onComplete: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     
     @State private var newPassword: String = ""
     @State private var confirmPassword: String = ""
@@ -288,85 +332,106 @@ struct NewPasswordAfterRecoveryView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
-                    Image(systemName: "lock.rotation")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.green)
-                    
-                    Text("Nueva Contraseña")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("Establece una nueva contraseña maestra para tu cuenta.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 40)
+            ZStack {
+                MetallicBackground()
                 
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Nueva contraseña")
-                            .font(.headline)
-                        
-                        HStack {
-                            if showPassword {
-                                TextField("Mínimo 12 caracteres", text: $newPassword)
-                            } else {
-                                SecureField("Mínimo 12 caracteres", text: $newPassword)
-                            }
+                VStack(spacing: 30) {
+                    MetallicHeader(
+                        title: "Nueva Contraseña",
+                        icon: "lock.rotation",
+                        iconSize: 70
+                    )
+                    
+                    VStack(spacing: 20) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Nueva contraseña")
+                                .font(.headline)
+                                .foregroundStyle(
+                                    colorScheme == .dark
+                                        ? Color(red: 0.80, green: 0.85, blue: 0.95)
+                                        : Color(red: 0.25, green: 0.30, blue: 0.45)
+                                )
                             
-                            Button(action: { showPassword.toggle() }) {
-                                Image(systemName: showPassword ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
+                            HStack {
+                                if showPassword {
+                                    TextField("Mínimo 12 caracteres", text: $newPassword)
+                                        .foregroundStyle(colorScheme == .dark ? .white : .primary)
+                                } else {
+                                    SecureField("Mínimo 12 caracteres", text: $newPassword)
+                                        .foregroundStyle(colorScheme == .dark ? .white : .primary)
+                                }
+                                
+                                Button(action: { showPassword.toggle() }) {
+                                    Image(systemName: showPassword ? "eye.slash" : "eye")
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: colorScheme == .dark
+                                                    ? [Color(red: 0.70, green: 0.75, blue: 0.85), Color(red: 0.50, green: 0.55, blue: 0.65)]
+                                                    : [Color(red: 0.40, green: 0.45, blue: 0.55), Color(red: 0.60, green: 0.65, blue: 0.75)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                }
                             }
+                            .metallicTextField()
+                            
+                            MetallicStrengthBar(strength: newPassword.passwordStrength)
                         }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                         
-                        PasswordStrengthBar(password: newPassword)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Confirmar contraseña")
-                            .font(.headline)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Confirmar contraseña")
+                                .font(.headline)
+                                .foregroundStyle(
+                                    colorScheme == .dark
+                                        ? Color(red: 0.80, green: 0.85, blue: 0.95)
+                                        : Color(red: 0.25, green: 0.30, blue: 0.45)
+                                )
+                            
+                            SecureField("Repite la contraseña", text: $confirmPassword)
+                                .foregroundStyle(colorScheme == .dark ? .white : .primary)
+                                .metallicTextField()
+                        }
                         
-                        SecureField("Repite la contraseña", text: $confirmPassword)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        if let errorMessage = errorMessage {
+                            Label(errorMessage, systemImage: "exclamationmark.triangle")
+                                .font(.caption)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color.red.opacity(0.9), Color.red.opacity(0.7)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        }
                     }
+                    .padding(24)
+                    .metallicCard()
                     
-                    if let errorMessage = errorMessage {
-                        Label(errorMessage, systemImage: "exclamationmark.triangle")
-                            .font(.caption)
-                            .foregroundStyle(.red)
+                    Spacer()
+                    
+                    Button(action: setupNewPassword) {
+                        if isSettingUp {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        } else {
+                            Text("Establecer Contraseña")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
                     }
+                    .foregroundStyle(.white)
+                    .frame(height: 54)
+                    .metallicButton(isEnabled: canProceed && !isSettingUp)
+                    .disabled(!canProceed || isSettingUp)
+                    .padding(.bottom, 30)
                 }
-                
-                Spacer()
-                
-                Button(action: setupNewPassword) {
-                    if isSettingUp {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    } else {
-                        Text("Establecer Contraseña")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    }
-                }
-                .background(canProceed ? Color.green : Color.gray)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .disabled(!canProceed || isSettingUp)
-                .padding(.bottom, 30)
+                .padding(.horizontal, 24)
+                .padding(.top, 40)
             }
-            .padding(.horizontal, 30)
             .navigationTitle("Nueva Contraseña")
             .navigationBarTitleDisplayMode(.inline)
         }
