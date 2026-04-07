@@ -193,6 +193,60 @@ class CryptoService {
         let computedHash = try hashPassword(password, salt: salt)
         return computedHash.constantTimeCompare(to: hash)
     }
+    
+    // MARK: - Encriptación de Master Key
+    
+    /// Encripta la master key usando una clave derivada de la contraseña
+    /// - Parameters:
+    ///   - masterKey: La master key a proteger
+    ///   - password: Contraseña del usuario
+    ///   - salt: Salt para derivación
+    /// - Returns: Datos encriptados de la master key (nonce + ciphertext + tag)
+    func encryptMasterKey(_ masterKey: SymmetricKey, password: String, salt: Data) throws -> Data {
+        let derivedKey = try deriveKey(from: password, salt: salt)
+        let sealedBox = try AES.GCM.seal(masterKey.withUnsafeBytes { Data($0) }, using: derivedKey)
+        guard let combined = sealedBox.combined else {
+            throw CryptoError.encryptionFailed
+        }
+        return combined
+    }
+    
+    /// Desencripta la master key usando una clave derivada de la contraseña
+    /// - Parameters:
+    ///   - encryptedData: Datos encriptados (nonce + ciphertext + tag)
+    ///   - password: Contraseña del usuario
+    ///   - salt: Salt para derivación
+    /// - Returns: Master key desencriptada
+    func decryptMasterKey(_ encryptedData: Data, password: String, salt: Data) throws -> SymmetricKey {
+        let derivedKey = try deriveKey(from: password, salt: salt)
+        let sealedBox = try AES.GCM.SealedBox(combined: encryptedData)
+        let decryptedData = try AES.GCM.open(sealedBox, using: derivedKey)
+        return SymmetricKey(data: decryptedData)
+    }
+    
+    /// Encripta la master key directamente con una clave proporcionada
+    /// - Parameters:
+    ///   - masterKey: La master key a proteger
+    ///   - key: Clave para encriptar
+    /// - Returns: Datos encriptados
+    func encryptMasterKey(_ masterKey: SymmetricKey, key: SymmetricKey) throws -> Data {
+        let sealedBox = try AES.GCM.seal(masterKey.withUnsafeBytes { Data($0) }, using: key)
+        guard let combined = sealedBox.combined else {
+            throw CryptoError.encryptionFailed
+        }
+        return combined
+    }
+    
+    /// Desencripta la master key directamente con una clave proporcionada
+    /// - Parameters:
+    ///   - encryptedData: Datos encriptados
+    ///   - key: Clave para desencriptar
+    /// - Returns: Master key desencriptada
+    func decryptMasterKey(_ encryptedData: Data, key: SymmetricKey) throws -> SymmetricKey {
+        let sealedBox = try AES.GCM.SealedBox(combined: encryptedData)
+        let decryptedData = try AES.GCM.open(sealedBox, using: key)
+        return SymmetricKey(data: decryptedData)
+    }
 }
 
 // MARK: - Extensiones de seguridad

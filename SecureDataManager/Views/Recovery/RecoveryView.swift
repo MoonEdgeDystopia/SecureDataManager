@@ -18,7 +18,7 @@ struct RecoveryView: View {
     @State private var isVerifying: Bool = false
     @State private var errorMessage: String?
     @State private var showNewPasswordSetup: Bool = false
-    @State private var recoveredSalt: Data?
+    @State private var recoveredMasterKey: SymmetricKey?
     @State private var recoveryData: RecoveryData?
     
     private let recoveryManager = RecoveryManager.shared
@@ -165,9 +165,9 @@ struct RecoveryView: View {
                 loadRecoveryData()
             }
             .sheet(isPresented: $showNewPasswordSetup) {
-                if let salt = recoveredSalt {
+                if let key = recoveredMasterKey {
                     NewPasswordAfterRecoveryView(
-                        recoveredSalt: salt,
+                        recoveredMasterKey: key,
                         isAuthenticated: $isAuthenticated,
                         onComplete: { dismiss() }
                     )
@@ -237,19 +237,19 @@ struct RecoveryView: View {
                     throw RecoveryError.invalidCode
                 }
                 
-                print("Código correcto, recuperando salt maestro...")
+                print("Código correcto, recuperando master key...")
                 
-                // Recuperar salt maestro
-                let masterSalt = try recoveryManager.recoverMasterSalt(
+                // Recuperar master key
+                let masterKey = try recoveryManager.recoverMasterKey(
                     answers: cleanedAnswers,
                     code: cleanedCode,
                     recoveryData: data
                 )
                 
-                print("Salt maestro recuperado: \(masterSalt.count) bytes")
+                print("Master key recuperada exitosamente")
                 
                 await MainActor.run {
-                    self.recoveredSalt = masterSalt
+                    self.recoveredMasterKey = masterKey
                     self.isVerifying = false
                     self.showNewPasswordSetup = true
                     print("Recuperación exitosa!")
@@ -275,7 +275,7 @@ struct RecoveryView: View {
 /// Vista para configurar nueva contraseña después de recuperación
 struct NewPasswordAfterRecoveryView: View {
     
-    let recoveredSalt: Data
+    let recoveredMasterKey: SymmetricKey
     @Binding var isAuthenticated: Bool
     let onComplete: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -389,22 +389,19 @@ struct NewPasswordAfterRecoveryView: View {
         
         isSettingUp = true
         print("=== CONFIGURANDO NUEVA CONTRASEÑA ===")
+        print("Usando master key recuperada (misma key, nueva contraseña)")
         
         Task {
             do {
-                let cryptoService = CryptoService()
-                let passwordHash = try cryptoService.hashPassword(newPassword, salt: recoveredSalt)
-                let masterKey = try cryptoService.deriveKey(from: newPassword, salt: recoveredSalt)
+                // Usar AuthViewModel para configurar nueva contraseña con la master key existente
+                let authViewModel = AuthViewModel()
+                try authViewModel.resetPassword(newPassword, masterKey: recoveredMasterKey)
                 
-                print("Hash y clave derivados exitosamente")
+                print("Nueva contraseña configurada exitosamente")
+                print("Master key preservada - los datos existentes siguen accesibles")
                 
-                // Guardar en Keychain
-                try KeychainManager.shared.saveSalt(recoveredSalt)
-                try KeychainManager.shared.savePasswordHash(passwordHash)
-                
-                // Guardar masterKey
-                AuthStateManager.shared.masterKey = masterKey
-                print("Datos guardados en Keychain")
+                // Guardar masterKey en el singleton
+                AuthStateManager.shared.masterKey = recoveredMasterKey
                 
                 await MainActor.run {
                     isAuthenticated = true

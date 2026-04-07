@@ -58,7 +58,7 @@ class RecoveryManager {
         questions: [String],
         answers: [String],
         code: String,
-        masterSalt: Data
+        masterKey: SymmetricKey
     ) throws -> (recoveryData: RecoveryData, recoveryCode: String) {
         guard questions.count == 3 && answers.count == 3 else {
             throw NSError(domain: "RecoveryManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "Se necesitan exactamente 3 preguntas y respuestas"])
@@ -82,8 +82,8 @@ class RecoveryManager {
             salt: recoverySalt
         )
         
-        // Encriptar el salt maestro con la clave de recuperación
-        let encryptedMasterSalt = try encryptMasterSalt(masterSalt, key: recoveryKey)
+        // Encriptar la master key con la clave de recuperación
+        let encryptedMasterKey = try cryptoService.encryptMasterKey(masterKey, key: recoveryKey)
         
         let recoveryData = RecoveryData(
             question1: questions[0],
@@ -94,7 +94,7 @@ class RecoveryManager {
             answer3Hash: answer3Hash,
             recoveryCodeHash: recoveryCodeHash,
             recoverySalt: recoverySalt,
-            encryptedMasterSalt: encryptedMasterSalt
+            encryptedMasterKey: encryptedMasterKey
         )
         
         return (recoveryData, code)
@@ -130,12 +130,12 @@ class RecoveryManager {
     
     // MARK: - Recuperación
     
-    /// Recupera el salt maestro usando respuestas y código
-    func recoverMasterSalt(
+    /// Recupera la master key usando respuestas y código
+    func recoverMasterKey(
         answers: [String],
         code: String,
         recoveryData: RecoveryData
-    ) throws -> Data {
+    ) throws -> SymmetricKey {
         // Verificar respuestas
         guard verifyAnswers(answers: answers, recoveryData: recoveryData) else {
             throw RecoveryError.invalidAnswer
@@ -153,9 +153,9 @@ class RecoveryManager {
             salt: recoveryData.recoverySalt
         )
         
-        // Desencriptar salt maestro
-        return try decryptMasterSalt(
-            recoveryData.encryptedMasterSalt,
+        // Desencriptar master key
+        return try cryptoService.decryptMasterKey(
+            recoveryData.encryptedMasterKey,
             key: recoveryKey
         )
     }
@@ -237,30 +237,6 @@ class RecoveryManager {
         }
         
         return SymmetricKey(data: derivedKeyData)
-    }
-    
-    /// Encripta el salt maestro
-    private func encryptMasterSalt(_ salt: Data, key: SymmetricKey) throws -> Data {
-        do {
-            let sealedBox = try AES.GCM.seal(salt, using: key)
-            guard let combined = sealedBox.combined else {
-                throw RecoveryError.decryptionFailed
-            }
-            return combined
-        } catch {
-            throw RecoveryError.decryptionFailed
-        }
-    }
-    
-    /// Desencripta el salt maestro
-    private func decryptMasterSalt(_ encryptedData: Data, key: SymmetricKey) throws -> Data {
-        do {
-            let sealedBox = try AES.GCM.SealedBox(combined: encryptedData)
-            let decryptedData = try AES.GCM.open(sealedBox, using: key)
-            return decryptedData
-        } catch {
-            throw RecoveryError.decryptionFailed
-        }
     }
     
     /// Comparación en tiempo constante para prevenir timing attacks

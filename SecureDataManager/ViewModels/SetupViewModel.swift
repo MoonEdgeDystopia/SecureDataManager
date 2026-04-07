@@ -136,21 +136,17 @@ class SetupViewModel: ObservableObject {
         isLoading = true
         
         do {
-            // 1. Configurar contraseña (genera salt maestro)
-            try authViewModel.setupPassword(password)
+            // 1. Configurar contraseña (genera master key aleatoria)
+            let masterKey = try authViewModel.setupPassword(password)
             
-            guard let masterSalt = try KeychainManager.shared.getSalt() else {
-                throw NSError(domain: "Setup", code: -1, userInfo: [NSLocalizedDescriptionKey: "No se pudo obtener el salt maestro"])
-            }
+            print("Master key generada: \(masterKey.withUnsafeBytes { $0.count }) bytes")
             
-            print("Master salt obtenido: \(masterSalt.count) bytes")
-            
-            // 2. Generar RecoveryData con el salt maestro
+            // 2. Generar RecoveryData con la master key
             let (recoveryData, _) = try recoveryManager.generateRecoveryData(
                 questions: recoveryQuestions,
                 answers: recoveryAnswers,
                 code: recoveryCode,
-                masterSalt: masterSalt
+                masterKey: masterKey
             )
             
             print("RecoveryData generado exitosamente")
@@ -160,9 +156,7 @@ class SetupViewModel: ObservableObject {
             print("RecoveryData guardado en Keychain")
             
             // 4. Guardar masterKey en el singleton
-            if let key = authViewModel.masterKey {
-                AuthStateManager.shared.masterKey = key
-            }
+            AuthStateManager.shared.masterKey = masterKey
             
             // 5. Configurar biometría si está habilitada
             if isBiometricEnabled {
@@ -220,17 +214,4 @@ class SetupViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Recuperación (para uso posterior)
-    
-    func recoverFromQuestions(_ questions: [String], code: String) throws -> Data {
-        guard let recoveryData = self.recoveryData else {
-            throw RecoveryError.recoveryDataNotFound
-        }
-        
-        return try recoveryManager.recoverMasterSalt(
-            answers: questions,
-            code: code,
-            recoveryData: recoveryData
-        )
-    }
 }

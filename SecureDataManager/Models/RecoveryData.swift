@@ -17,7 +17,7 @@ struct RecoveryData: Codable {
     let answer3Hash: Data
     let recoveryCodeHash: Data      // Hash del código para verificación
     let recoverySalt: Data          // Salt único para recuperación
-    let encryptedMasterSalt: Data   // Salt maestro encriptado con recoveryKey
+    let encryptedMasterKey: Data    // Master Key encriptada con recoveryKey
     
     init(
         question1: String,
@@ -28,7 +28,7 @@ struct RecoveryData: Codable {
         answer3Hash: Data,
         recoveryCodeHash: Data,
         recoverySalt: Data,
-        encryptedMasterSalt: Data
+        encryptedMasterKey: Data
     ) {
         self.question1 = question1
         self.answer1Hash = answer1Hash
@@ -38,7 +38,7 @@ struct RecoveryData: Codable {
         self.answer3Hash = answer3Hash
         self.recoveryCodeHash = recoveryCodeHash
         self.recoverySalt = recoverySalt
-        self.encryptedMasterSalt = encryptedMasterSalt
+        self.encryptedMasterKey = encryptedMasterKey
     }
 }
 

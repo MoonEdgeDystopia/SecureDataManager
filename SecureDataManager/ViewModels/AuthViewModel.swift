@@ -74,7 +74,8 @@ class AuthViewModel: ObservableObject {
             
             // Recuperar salt y hash almacenados
             guard let salt = try KeychainManager.shared.getSalt(),
-                  let storedHash = try KeychainManager.shared.getPasswordHash() else {
+                  let storedHash = try KeychainManager.shared.getPasswordHash(),
+                  let encryptedMasterKey = try KeychainManager.shared.getEncryptedMasterKey() else {
                 await MainActor.run {
                     errorMessage = "Configuración inicial requerida"
                     isLoading = false
@@ -87,8 +88,8 @@ class AuthViewModel: ObservableObject {
             let isValid = try cryptoService.verifyPassword(password, against: storedHash, salt: salt)
             
             if isValid {
-                // Derivar clave maestra
-                masterKey = try cryptoService.deriveKey(from: password, salt: salt)
+                // Desencriptar la master key usando la contraseña
+                masterKey = try cryptoService.decryptMasterKey(encryptedMasterKey, password: password, salt: salt)
                 
                 await MainActor.run {
                     BruteForceProtection.shared.recordSuccessfulAttempt()
@@ -181,8 +182,8 @@ class AuthViewModel: ObservableObject {
     
     // MARK: - Setup
     
-    /// Configura la contraseña inicial
-    func setupPassword(_ password: String) throws {
+    /// Configura la contraseña inicial con master key aleatoria
+    func setupPassword(_ password: String) throws -> SymmetricKey {
         let cryptoService = CryptoService()
         
         // Generar salt
@@ -191,15 +192,20 @@ class AuthViewModel: ObservableObject {
         // Generar hash de contraseña
         let passwordHash = try cryptoService.hashPassword(password, salt: salt)
         
-        // Derivar clave maestra
-        let masterKey = try cryptoService.deriveKey(from: password, salt: salt)
+        // Generar master key aleatoria (no derivada de la contraseña)
+        let masterKey = cryptoService.generateKey()
+        
+        // Encriptar la master key con la contraseña
+        let encryptedMasterKey = try cryptoService.encryptMasterKey(masterKey, password: password, salt: salt)
         
         // Guardar en Keychain
         try KeychainManager.shared.saveSalt(salt)
         try KeychainManager.shared.savePasswordHash(passwordHash)
         try KeychainManager.shared.saveMasterKey(masterKey)
+        try KeychainManager.shared.saveEncryptedMasterKey(encryptedMasterKey)
         
         self.masterKey = masterKey
+        return masterKey
     }
     
     /// Habilita autenticación biométrica
@@ -230,12 +236,28 @@ class AuthViewModel: ObservableObject {
     }
     
     /// Configura nueva contraseña después de recuperación
-    func resetPassword(_ newPassword: String) throws {
-        // Limpiar datos anteriores
-        try KeychainManager.shared.clearAllAuthData()
+    /// - Parameters:
+    ///   - newPassword: Nueva contraseña
+    ///   - masterKey: Master key existente (recuperada) - no cambia
+    func resetPassword(_ newPassword: String, masterKey: SymmetricKey) throws {
+        let cryptoService = CryptoService()
         
-        // Configurar nueva contraseña
-        try setupPassword(newPassword)
+        // Generar nuevo salt
+        let salt = cryptoService.generateSalt()
+        
+        // Generar hash de nueva contraseña
+        let passwordHash = try cryptoService.hashPassword(newPassword, salt: salt)
+        
+        // Encriptar la master key existente con la nueva contraseña
+        let encryptedMasterKey = try cryptoService.encryptMasterKey(masterKey, password: newPassword, salt: salt)
+        
+        // Guardar en Keychain (sobrescribiendo)
+        try KeychainManager.shared.saveSalt(salt)
+        try KeychainManager.shared.savePasswordHash(passwordHash)
+        try KeychainManager.shared.saveMasterKey(masterKey)
+        try KeychainManager.shared.saveEncryptedMasterKey(encryptedMasterKey)
+        
+        self.masterKey = masterKey
         
         // Limpiar protección de fuerza bruta
         BruteForceProtection.shared.reset()

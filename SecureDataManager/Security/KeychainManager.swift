@@ -299,6 +299,65 @@ class KeychainManager {
         return value == "1"
     }
     
+    // MARK: - Master Key Encriptada
+    
+    /// Guarda la master key encriptada
+    func saveEncryptedMasterKey(_ data: Data) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: "encryptedMasterKey",
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+        
+        let status = SecItemAdd(query as CFDictionary, nil)
+        
+        if status == errSecDuplicateItem {
+            let updateQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: "encryptedMasterKey"
+            ]
+            let attributesToUpdate: [String: Any] = [
+                kSecValueData as String: data
+            ]
+            let updateStatus = SecItemUpdate(updateQuery as CFDictionary, attributesToUpdate as CFDictionary)
+            guard updateStatus == errSecSuccess else {
+                throw KeychainError.invalidStatus(updateStatus)
+            }
+        } else if status != errSecSuccess {
+            throw KeychainError.invalidStatus(status)
+        }
+    }
+    
+    /// Recupera la master key encriptada
+    func getEncryptedMasterKey() throws -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: "encryptedMasterKey",
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status == errSecSuccess else {
+            if status == errSecItemNotFound {
+                return nil
+            }
+            throw KeychainError.invalidStatus(status)
+        }
+        
+        guard let data = result as? Data else {
+            throw KeychainError.conversionFailed
+        }
+        
+        return data
+    }
+    
     // MARK: - Datos de Recuperación
     
     /// Guarda los datos de recuperación
@@ -368,7 +427,7 @@ class KeychainManager {
     func clearAllAuthData() throws {
         try deleteMasterKey()
         
-        let accounts = ["passwordSalt", "passwordHash", "biometricEnabled", "recoveryData"]
+        let accounts = ["passwordSalt", "passwordHash", "biometricEnabled", "recoveryData", "encryptedMasterKey"]
         for account in accounts {
             let query: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
