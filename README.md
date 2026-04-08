@@ -7,12 +7,30 @@ Una aplicación iOS de gestión de datos segura con cifrado AES-256-GCM, diseña
 ![Platform](https://img.shields.io/badge/Platform-iOS-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+
+
 ## 📱 Descripción
 
 **SecureDataManager** es una aplicación de seguridad que permite almacenar y gestionar información sensible de manera cifrada. Utiliza criptografía de grado militar para garantizar que tus datos permanezcan privados y seguros, incluso si el dispositivo cae en manos equivocadas.
 
 ### Diseño Metálico Premium
 La aplicación cuenta con un diseño metálico sofisticado que se adapta al modo claro y oscuro del sistema, proporcionando una experiencia visual moderna y profesional.
+
+---
+
+## 🖼️ Capturas de Pantalla
+
+### 🔐 Pantalla de Login
+![Login](Screenshots/IMG_3705.png)
+*Pantalla de autenticación con diseño metálico plateado. Permite ingresar la contraseña maestra y acceder mediante Face ID/Touch ID.*
+
+### 🔑 Gestión de Cuentas
+![Accounts](Screenshots/IMG_3706.png)
+*Lista de cuentas guardadas con cifrado AES-256. Visualización segura de contraseñas y opciones de recuperación.*
+
+### 🔄 Recuperación de Cuenta
+![Recovery](Screenshots/IMG_3708.png)
+*Sistema de recuperación mediante preguntas de seguridad personalizadas y código de recuperación único.*
 
 ---
 
