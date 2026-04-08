@@ -12,7 +12,6 @@ struct LoginView: View {
     
     @StateObject private var viewModel = AuthViewModel()
     @Binding var isAuthenticated: Bool
-    @Binding var showSetup: Bool
     
     @State private var password: String = ""
     @State private var showPassword: Bool = false
@@ -196,36 +195,20 @@ struct LoginView: View {
                         .disabled(password.isEmpty || viewModel.isLoading)
                         
                         // Opciones adicionales
-                        VStack(spacing: 12) {
-                            Button("¿Olvidaste tu contraseña?") {
-                                showRecovery = true
-                            }
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: colorScheme == .dark
-                                        ? [Color(red: 0.65, green: 0.75, blue: 0.95), Color(red: 0.55, green: 0.65, blue: 0.85)]
-                                        : [Color(red: 0.30, green: 0.40, blue: 0.70), Color(red: 0.40, green: 0.50, blue: 0.80)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            
-                            Button("Configurar nueva cuenta") {
-                                showSetup = true
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: colorScheme == .dark
-                                        ? [Color(red: 0.55, green: 0.60, blue: 0.70), Color(red: 0.45, green: 0.50, blue: 0.60)]
-                                        : [Color(red: 0.40, green: 0.45, blue: 0.55), Color(red: 0.55, green: 0.60, blue: 0.70)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                        Button("¿Olvidaste tu contraseña?") {
+                            showRecovery = true
                         }
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: colorScheme == .dark
+                                    ? [Color(red: 0.65, green: 0.75, blue: 0.95), Color(red: 0.55, green: 0.65, blue: 0.85)]
+                                    : [Color(red: 0.30, green: 0.40, blue: 0.70), Color(red: 0.40, green: 0.50, blue: 0.80)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                     }
                     .padding(24)
                     .metallicCard()
@@ -345,5 +328,5 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView(isAuthenticated: .constant(false), showSetup: .constant(false))
+    LoginView(isAuthenticated: .constant(false))
 }

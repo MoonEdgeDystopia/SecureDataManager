@@ -51,8 +51,7 @@ struct ContentView: View {
                                 isAuthenticated = true
                             }
                         }
-                    ),
-                    showSetup: $showSetup
+                    )
                 )
             }
         }
