@@ -263,18 +263,9 @@ Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](L
 
 ---
 
-## 🙏 Agradecimientos
+## Frameworks
 
 - [Apple CryptoKit](https://developer.apple.com/documentation/cryptokit) - Framework de criptografía
 - [SwiftUI](https://developer.apple.com/documentation/swiftui) - Framework de UI moderno
 - [LocalAuthentication](https://developer.apple.com/documentation/localauthentication) - Framework de autenticación biométrica
-
 ---
-
-## 📧 Contacto
-
-Para preguntas, sugerencias o reportes de seguridad, por favor abre un issue en el repositorio.
-
----
-
-**Desarrollado con 🔒 y ❤️ para tu privacidad.**
